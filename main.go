@@ -5,9 +5,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"text/template"
 )
 
 const filename = "secrets.json"
+
+type tplData struct {
+	shareURL  string
+	secretKey string
+	errorMsg  string
+}
 
 func main() {
 	fileExists()
@@ -56,5 +63,19 @@ func server() {
 
 // handleIndex serves the index.html page
 func handleIndex(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, "index.html")
+	outputTpl(w, tplData{})
+}
+
+// outputTpl reads the index.html template from the file system, outputs it to the w writer, and
+// passes the data to it
+func outputTpl(w http.ResponseWriter, data tplData) {
+	index, err := os.ReadFile("index.html")
+	if err != nil {
+		http.Error(w, "Missing index page", http.StatusInternalServerError)
+		return
+	}
+	tpl := template.Must(template.New("").
+		Parse(string(index)))
+
+	tpl.Execute(w, data)
 }
