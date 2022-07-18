@@ -37,9 +37,24 @@ func fileExists() {
 
 // server starts listening on all the endpoints and passes the calls to the handlers
 func server() {
+	// TODO: test all endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, World!")
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+
+		if r.Method == "GET" {
+			handleIndex(w, r)
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
 	})
 
 	log.Fatal(http.ListenAndServe(":8000", nil))
+}
+
+// handleIndex serves the index.html page
+func handleIndex(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "index.html")
 }
