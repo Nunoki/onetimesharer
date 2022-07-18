@@ -11,9 +11,9 @@ import (
 const filename = "secrets.json"
 
 type tplData struct {
-	shareURL  string
-	secretKey string
-	errorMsg  string
+	ShareURL  string
+	SecretKey string
+	ErrorMsg  string
 }
 
 func main() {
