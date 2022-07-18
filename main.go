@@ -17,14 +17,14 @@ type tplData struct {
 }
 
 func main() {
-	fileExists()
-	server()
+	verifyFile()
+	serve()
 }
 
-// fileExists makes sure the file with the secrets exists, by creating it if it doesn't already.
+// verifyFile makes sure the file with the secrets exists, by creating it if it doesn't already.
 // If an error occurs with either reading or creating it, it outputs the error and exits the
 // program.
-func fileExists() {
+func verifyFile() {
 	// TODO: test: https://pkg.go.dev/testing/fstest
 	_, err := os.ReadFile(filename)
 	if os.IsNotExist(err) {
@@ -42,8 +42,8 @@ func fileExists() {
 	}
 }
 
-// server starts listening on all the endpoints and passes the calls to the handlers
-func server() {
+// serve starts listening on all the endpoints and passes the calls to the handlers
+func serve() {
 	// TODO: test all endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
