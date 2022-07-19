@@ -44,6 +44,8 @@ func verifyFile() {
 
 // serve starts listening on all the endpoints and passes the calls to the handlers
 func serve() {
+	port := "8000"
+
 	// TODO: test all endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -58,7 +60,8 @@ func serve() {
 		}
 	})
 
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	log.Print("Listening on port " + port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 // handleIndex serves the index.html page
