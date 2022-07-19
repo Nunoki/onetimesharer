@@ -65,7 +65,7 @@ func serve() {
 }
 
 // handleIndex serves the index.html page
-func handleIndex(w http.ResponseWriter, r *http.Request) {
+func handleIndex(w http.ResponseWriter, _ *http.Request) {
 	outputTpl(w, tplData{})
 }
 
