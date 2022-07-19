@@ -69,16 +69,12 @@ func handleIndex(w http.ResponseWriter, _ *http.Request) {
 	outputTpl(w, tplData{})
 }
 
-// outputTpl reads the index.html template from the file system, outputs it to the w writer, and
-// passes the data to it
+// outputTpl parses the index.html file and outputs it to the w writer, passing the data to it
 func outputTpl(w http.ResponseWriter, data tplData) {
-	index, err := os.ReadFile("index.html")
-	if err != nil {
-		http.Error(w, "Missing index page", http.StatusInternalServerError)
-		return
-	}
-	tpl := template.Must(template.New("").
-		Parse(string(index)))
+	tpl := template.Must(template.ParseFiles("index.html"))
+	err := tpl.Execute(w, data)
 
-	tpl.Execute(w, data)
+	if err != nil {
+		log.Print(err)
+	}
 }
