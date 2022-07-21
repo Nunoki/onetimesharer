@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -10,11 +11,14 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
 const filename = "secrets.json"
-const port = "8000"
+const defaultPort = 8000
+
+var port *int
 
 type tplData struct {
 	ShareURL  string
@@ -26,7 +30,14 @@ type collection map[string]string
 
 func main() {
 	verifyFile()
+	processFlags()
 	serve()
+}
+
+// processFlags processes passed arguments and sets up variables appropriately
+func processFlags() {
+	port = flag.Int("port", defaultPort, "Port to run on")
+	flag.Parse()
 }
 
 // verifyFile makes sure the file with the secrets exists, by creating it if it doesn't already.
@@ -89,8 +100,9 @@ func serve() {
 		}
 	})
 
-	log.Print("Listening on port " + port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	portStr := strconv.Itoa(*port)
+	log.Print("Listening on port " + portStr)
+	log.Fatal(http.ListenAndServe(":"+portStr, nil))
 }
 
 // handleIndex serves the default page for creating a new secret
