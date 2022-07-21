@@ -15,6 +15,7 @@ import (
 
 const filename = "secrets.json"
 const appURL = "http://localhost"
+const port = "8000"
 
 var errSecretNotFound = errors.New("secret not found")
 
@@ -54,8 +55,6 @@ func verifyFile() {
 
 // serve starts listening on all the endpoints and passes the calls to the handlers
 func serve() {
-	port := "8000"
-
 	// TODO: test all endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -76,17 +75,32 @@ func serve() {
 		}
 	})
 
-	// TODO
-	// http.HandleFunc("/show", func(w http.ResponseWriter, r *http.Request) {
-	// 	if r.Method == "GET" {
-	// 		handleShow(w, r)
-	// 	} else {
-	// 		w.WriteHeader(http.StatusBadRequest)
-	// 	}
-	// })
+	http.HandleFunc("/show", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			handleShow(w, r)
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	})
+
+	http.HandleFunc("/secret", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "POST" {
+			handleFetchSecret(w, r)
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+		}
+	})
 
 	log.Print("Listening on port " + port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+// appURLP returns the app URL, including the port number, if it's non-80
+func appURLP() string {
+	if port != "80" {
+		return appURL + ":" + port
+	}
+	return appURL
 }
 
 // handleIndex serves the default page for creating a new secret
@@ -111,9 +125,57 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := tplData{
-		ShareURL: appURL + "/show?key=" + key,
+		ShareURL: appURLP() + "/show?key=" + key,
 	}
 	outputTpl(w, data)
+}
+
+// handleShow shows the button that displays the secret
+func handleShow(w http.ResponseWriter, r *http.Request) {
+	key := r.FormValue("key")
+	if key == "" {
+		http.Error(w, "key not specified", http.StatusBadRequest)
+		return
+	}
+
+	ok := validateSecret(key)
+	if !ok {
+		data := tplData{
+			ErrorMsg: "Could not find requested secret",
+		}
+		outputTpl(w, data)
+		return
+	}
+
+	data := tplData{
+		SecretKey: key,
+	}
+	outputTpl(w, data)
+}
+
+// handleFetchSecret outputs the content of the secret in JSON format
+func handleFetchSecret(w http.ResponseWriter, r *http.Request) {
+	key := r.FormValue("key")
+	log.Print("key:", key)
+	if key == "" {
+		http.Error(w, "key not specified", http.StatusBadRequest)
+		return
+	}
+
+	secret, err := readSecret(key)
+	if err != nil {
+		http.Error(w, "failed to read secret", http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Secret string `json:"secret"`
+	}{
+		Secret: secret,
+	}
+	output, _ := json.Marshal(data)
+	w.Header().Set("Content-type", "application/json")
+	w.Write(output)
 }
 
 // outputTpl parses the index.html file and outputs it to the w writer, passing the data to it
@@ -168,6 +230,16 @@ func readSecret(key string) (string, error) {
 		return "", errSecretNotFound
 	}
 	return secret, nil
+}
+
+// DOCME
+func validateSecret(key string) bool {
+	secrets, err := readAllSecrets()
+	if err != nil {
+		return false
+	}
+	_, ok := secrets[key]
+	return ok
 }
 
 // DOCME
