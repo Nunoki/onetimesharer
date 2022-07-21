@@ -19,6 +19,9 @@ const filename = "secrets.json"
 const defaultPort = 8000
 
 var port *int
+var https *bool
+var certfile *string
+var keyfile *string
 
 type tplData struct {
 	ShareURL  string
@@ -34,10 +37,19 @@ func main() {
 	serve()
 }
 
-// processFlags processes passed arguments and sets up variables appropriately
+// processFlags processes passed arguments and sets up variables appropriately. If a conflict occurs
+// with flag configuration, an error is being output to stderr, and the program exits.
 func processFlags() {
 	port = flag.Int("port", defaultPort, "Port to run on")
+	https = flag.Bool("https", false, "Whether to run on HTTPS (requires --certfile and --keyfile)")
+	certfile = flag.String("certfile", "", "Path to certificate file, required when running on HTTPS")
+	keyfile = flag.String("keyfile", "", "Path to key file, required when running on HTTPS")
 	flag.Parse()
+
+	if *https && (*certfile == "" || *keyfile == "") {
+		fmt.Fprintf(os.Stderr, "Running on HTTPS requires the certification file and key file (see --help)\n")
+		os.Exit(1)
+	}
 }
 
 // verifyFile makes sure the file with the secrets exists, by creating it if it doesn't already.
