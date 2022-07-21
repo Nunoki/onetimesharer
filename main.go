@@ -17,15 +17,13 @@ const filename = "secrets.json"
 const appURL = "http://localhost"
 const port = "8000"
 
-var errSecretNotFound = errors.New("secret not found")
-
 type tplData struct {
 	ShareURL  string
 	SecretKey string
 	ErrorMsg  string
 }
 
-type secrets map[string]string
+type collection map[string]string
 
 func main() {
 	verifyFile()
@@ -75,6 +73,7 @@ func serve() {
 		}
 	})
 
+	// #show_url
 	http.HandleFunc("/show", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
 			handleShow(w, r)
@@ -115,7 +114,6 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to read posted content", http.StatusBadRequest)
 		return
 	}
-	log.Print("secret: ", secret)
 
 	key, err := saveSecret(secret)
 	if err != nil {
@@ -125,6 +123,7 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := tplData{
+		// #show_url
 		ShareURL: appURLP() + "/show?key=" + key,
 	}
 	outputTpl(w, data)
@@ -156,7 +155,6 @@ func handleShow(w http.ResponseWriter, r *http.Request) {
 // handleFetchSecret outputs the content of the secret in JSON format
 func handleFetchSecret(w http.ResponseWriter, r *http.Request) {
 	key := r.FormValue("key")
-	log.Print("key:", key)
 	if key == "" {
 		http.Error(w, "key not specified", http.StatusBadRequest)
 		return
@@ -199,23 +197,31 @@ func saveSecret(secret string) (string, error) {
 
 	secrets[key] = string(secret)
 
-	jsonData, err := json.Marshal(secrets)
-	if err != nil {
+	if err := storeSecrets(secrets); err != nil {
 		return "", err
 	}
-	os.WriteFile(filename, jsonData, os.FileMode(0111))
 
 	return key, nil
 }
 
 // DOCME
-func deleteSecret(key string) error {
-	secrets, err := readAllSecrets()
+func storeSecrets(secrets collection) error {
+	jsonData, err := json.Marshal(secrets)
 	if err != nil {
 		return err
 	}
+	if err := os.WriteFile(filename, jsonData, os.FileMode(0111)); err != nil {
+		return err
+	}
+	return nil
+}
 
+// DOCME
+func deleteSecret(secrets collection, key string) error {
 	delete(secrets, key)
+	if err := storeSecrets(secrets); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -227,7 +233,10 @@ func readSecret(key string) (string, error) {
 	}
 	secret, ok := secrets[key]
 	if !ok {
-		return "", errSecretNotFound
+		return "", errors.New("not found")
+	}
+	if err := deleteSecret(secrets, key); err != nil {
+		return "", err
 	}
 	return secret, nil
 }
@@ -243,13 +252,13 @@ func validateSecret(key string) bool {
 }
 
 // DOCME
-func readAllSecrets() (secrets, error) {
+func readAllSecrets() (collection, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	jsonData := secrets{}
+	jsonData := collection{}
 	err = json.Unmarshal(content, &jsonData)
 	if err != nil {
 		return nil, err
