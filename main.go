@@ -162,6 +162,7 @@ func handleFetchSecret(w http.ResponseWriter, r *http.Request) {
 
 	secret, err := readSecret(key)
 	if err != nil {
+		log.Print(err)
 		http.Error(w, "failed to read secret", http.StatusInternalServerError)
 		return
 	}
@@ -245,6 +246,7 @@ func readSecret(key string) (string, error) {
 func validateSecret(key string) bool {
 	secrets, err := readAllSecrets()
 	if err != nil {
+		log.Print(err)
 		return false
 	}
 	_, ok := secrets[key]
