@@ -14,7 +14,6 @@ import (
 )
 
 const filename = "secrets.json"
-const appURL = "http://localhost"
 const port = "8000"
 
 type tplData struct {
@@ -94,14 +93,6 @@ func serve() {
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
-// appURLP returns the app URL, including the port number, if it's non-80
-func appURLP() string {
-	if port != "80" {
-		return appURL + ":" + port
-	}
-	return appURL
-}
-
 // handleIndex serves the default page for creating a new secret
 func handleIndex(w http.ResponseWriter, _ *http.Request) {
 	outputTpl(w, tplData{})
@@ -122,9 +113,10 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	shareURL := "http://" + r.Host + "/show?key=" + key
 	data := tplData{
 		// #show_url
-		ShareURL: appURLP() + "/show?key=" + key,
+		ShareURL: shareURL,
 	}
 	outputTpl(w, data)
 }
