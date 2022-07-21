@@ -75,9 +75,6 @@ func serve() {
 			handleIndex(w, r)
 		} else if r.Method == "POST" {
 			handlePost(w, r)
-			// TODO
-			// } else if r.Method == "DELETE" {
-			// 	handleDelete(w, r)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 		}
