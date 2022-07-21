@@ -32,14 +32,22 @@ type tplData struct {
 type collection map[string]string
 
 func main() {
-	verifyFile()
-	processFlags()
+	if err := verifyFile(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	if err := processFlags(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+		os.Exit(1)
+	}
+
 	serve()
 }
 
 // processFlags processes passed arguments and sets up variables appropriately. If a conflict occurs
 // with flag configuration, an error is being output to stderr, and the program exits.
-func processFlags() {
+func processFlags() error {
 	port = flag.Int("port", defaultPort, "Port to run on")
 	https = flag.Bool("https", false, "Whether to run on HTTPS (requires --certfile and --keyfile)")
 	certfile = flag.String("certfile", "", "Path to certificate file, required when running on HTTPS")
@@ -47,30 +55,31 @@ func processFlags() {
 	flag.Parse()
 
 	if *https && (*certfile == "" || *keyfile == "") {
-		fmt.Fprintf(os.Stderr, "Running on HTTPS requires the certification file and key file (see --help)\n")
-		os.Exit(1)
+		return errors.New("running on HTTPS requires the certification file and key file (see --help)")
 	}
+
+	return nil
 }
 
 // verifyFile makes sure the file with the secrets exists, by creating it if it doesn't already.
 // If an error occurs with either reading or creating it, it outputs the error and exits the
 // program.
-func verifyFile() {
+func verifyFile() error {
 	// TODO: test: https://pkg.go.dev/testing/fstest
 	_, err := os.ReadFile(filename)
 	if os.IsNotExist(err) {
 		_, err = os.Create(filename)
 
 		if err != nil {
-			fmt.Printf("failed to create file: %s\n", err)
-			os.Exit(1)
+			return errors.New("failed to create file: %s")
 		}
 	}
 
 	if err != nil {
-		fmt.Printf("could not read file: %s\n", err)
-		os.Exit(1)
+		return errors.New("could not read file: %s")
 	}
+
+	return nil
 }
 
 // serve starts listening on all the endpoints and passes the calls to the handlers
