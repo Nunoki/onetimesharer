@@ -18,10 +18,12 @@ import (
 const filename = "secrets.json"
 const defaultPort = 8000
 
-var port *int
-var https *bool
-var certfile *string
-var keyfile *string
+type config struct {
+	port     *int
+	https    *bool
+	certfile *string
+	keyfile  *string
+}
 
 type tplData struct {
 	ShareURL  string
@@ -37,28 +39,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := processFlags(); err != nil {
+	conf, err := processFlags()
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	serve()
+	serve(conf)
 }
 
 // processFlags processes passed arguments and sets up variables appropriately. If a conflict occurs
 // with flag configuration, an error is being output to stderr, and the program exits.
-func processFlags() error {
-	port = flag.Int("port", defaultPort, "Port to run on")
-	https = flag.Bool("https", false, "Whether to run on HTTPS (requires --certfile and --keyfile)")
-	certfile = flag.String("certfile", "", "Path to certificate file, required when running on HTTPS")
-	keyfile = flag.String("keyfile", "", "Path to key file, required when running on HTTPS")
+func processFlags() (config, error) {
+	conf := config{}
+
+	conf.port = flag.Int("port", defaultPort, "Port to run on")
+	conf.https = flag.Bool("https", false, "Whether to run on HTTPS (requires --certfile and --keyfile)")
+	conf.certfile = flag.String("certfile", "", "Path to certificate file, required when running on HTTPS")
+	conf.keyfile = flag.String("keyfile", "", "Path to key file, required when running on HTTPS")
 	flag.Parse()
 
-	if *https && (*certfile == "" || *keyfile == "") {
-		return errors.New("running on HTTPS requires the certification file and key file (see --help)")
+	if *conf.https && (*conf.certfile == "" || *conf.keyfile == "") {
+		return config{}, errors.New("running on HTTPS requires the certification file and key file (see --help)")
 	}
 
-	return nil
+	return conf, nil
 }
 
 // verifyFile makes sure the file with the secrets exists, by creating it if it doesn't already.
@@ -83,7 +88,7 @@ func verifyFile() error {
 }
 
 // serve starts listening on all the endpoints and passes the calls to the handlers
-func serve() {
+func serve(c config) {
 	// TODO: test all endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -118,7 +123,7 @@ func serve() {
 		}
 	})
 
-	portStr := strconv.Itoa(*port)
+	portStr := strconv.Itoa(*c.port)
 	log.Print("Listening on port " + portStr)
 	log.Fatal(http.ListenAndServe(":"+portStr, nil))
 }
