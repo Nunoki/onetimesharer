@@ -73,15 +73,13 @@ func verifyFile() error {
 	// TODO: test: https://pkg.go.dev/testing/fstest
 	_, err := os.ReadFile(filename)
 	if os.IsNotExist(err) {
-		_, err = os.Create(filename)
-
-		if err != nil {
-			return errors.New("failed to create file: %s")
+		if err = os.WriteFile(filename, []byte("{}"), os.FileMode(0700)); err != nil {
+			return fmt.Errorf("failed to create file: %s", filename)
 		}
 	}
 
 	if err != nil {
-		return errors.New("could not read file: %s")
+		return fmt.Errorf("could not read file: %s", filename)
 	}
 
 	return nil
@@ -238,7 +236,7 @@ func storeSecrets(secrets collection) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(filename, jsonData, os.FileMode(0111)); err != nil {
+	if err := os.WriteFile(filename, jsonData, os.FileMode(0700)); err != nil {
 		return err
 	}
 	return nil
