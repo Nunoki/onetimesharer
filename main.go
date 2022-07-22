@@ -31,6 +31,10 @@ type tplData struct {
 	ErrorMsg  string
 }
 
+type jsonOutput struct {
+	Secret string `json:"secret"`
+}
+
 type collection map[string]string
 
 func main() {
@@ -192,9 +196,7 @@ func handleFetchSecret(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := struct {
-		Secret string `json:"secret"`
-	}{
+	data := jsonOutput{
 		Secret: secret,
 	}
 	output, _ := json.Marshal(data)
