@@ -279,13 +279,12 @@ func readSecret(key string) (string, error) {
 		return "", errors.New("not found")
 	}
 
-	// TODO: reverse order
-	if err := deleteSecret(secrets, eKey); err != nil {
+	secret, err := crypt.Decrypt(eSecret, passphrase)
+	if err != nil {
 		return "", err
 	}
 
-	secret, err := crypt.Decrypt(eSecret, passphrase)
-	if err != nil {
+	if err := deleteSecret(secrets, eKey); err != nil {
 		return "", err
 	}
 
