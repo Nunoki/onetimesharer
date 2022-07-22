@@ -13,10 +13,14 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/Nunoki/onetimesharer/crypt"
 )
 
 const filename = "secrets.json"
 const defaultPort = 8000
+
+var passphrase string
 
 type config struct {
 	port     *int
@@ -48,6 +52,9 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
 	}
+
+	passphrase = randStr(32)
+	fmt.Fprint(os.Stdout, "Passphrase is: "+passphrase+"\n")
 
 	serve(conf)
 }
@@ -216,14 +223,16 @@ func outputTpl(w http.ResponseWriter, data tplData) {
 
 // DOCME
 func saveSecret(secret string) (string, error) {
-	// TODO encrypt
-	key := randStr(40)
+	key := randStr(32)
 	secrets, err := readAllSecrets()
 	if err != nil {
 		return "", err
 	}
 
-	secrets[key] = string(secret)
+	eKey, _ := crypt.Encrypt(key, passphrase)
+	eSecret, _ := crypt.Encrypt(secret, passphrase)
+
+	secrets[eKey] = string(eSecret)
 
 	if err := storeSecrets(secrets); err != nil {
 		return "", err
@@ -259,13 +268,27 @@ func readSecret(key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	secret, ok := secrets[key]
+
+	eKey, err := crypt.Encrypt(key, passphrase)
+	if err != nil {
+		return "", err
+	}
+
+	eSecret, ok := secrets[eKey]
 	if !ok {
 		return "", errors.New("not found")
 	}
-	if err := deleteSecret(secrets, key); err != nil {
+
+	// TODO: reverse order
+	if err := deleteSecret(secrets, eKey); err != nil {
 		return "", err
 	}
+
+	secret, err := crypt.Decrypt(eSecret, passphrase)
+	if err != nil {
+		return "", err
+	}
+
 	return secret, nil
 }
 
@@ -276,7 +299,14 @@ func validateSecret(key string) bool {
 		log.Print(err)
 		return false
 	}
-	_, ok := secrets[key]
+
+	eKey, err := crypt.Encrypt(key, passphrase)
+	if err != nil {
+		log.Print(err)
+		return false
+	}
+
+	_, ok := secrets[eKey]
 	return ok
 }
 
