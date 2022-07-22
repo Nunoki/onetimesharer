@@ -204,7 +204,7 @@ func handleFetchSecret(w http.ResponseWriter, r *http.Request) {
 
 // outputTpl parses the index.html file and outputs it to the w writer, passing the data to it
 func outputTpl(w http.ResponseWriter, data tplData) {
-	tpl := template.Must(template.ParseFiles("index.html"))
+	tpl := template.Must(template.New("").Parse(indexHTML()))
 	err := tpl.Execute(w, data)
 
 	if err != nil {
