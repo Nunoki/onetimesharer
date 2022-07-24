@@ -11,8 +11,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/Nunoki/onetimesharer/internal/pkg/filestorage"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
-	"github.com/Nunoki/onetimesharer/internal/pkg/storage"
 )
 
 const defaultPort uint = 8000
@@ -56,7 +56,7 @@ func main() {
 
 	passphrase = randomizer.RandStr(32)
 	fmt.Fprint(os.Stdout, "Passphrase is: "+passphrase+"\n")
-	store := storage.NewClient(passphrase)
+	store := filestorage.NewClient(passphrase)
 
 	server := NewServer(conf, store)
 	server.Serve(*conf.port)
