@@ -48,7 +48,7 @@ type store interface {
 }
 
 func main() {
-	conf, err := processFlags()
+	conf, err := processArgs()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
@@ -62,9 +62,9 @@ func main() {
 	server.Serve(*conf.port)
 }
 
-// processFlags processes passed arguments and sets up variables appropriately. If a conflict occurs
+// processArgs processes passed arguments and sets up variables appropriately. If a conflict occurs
 // with flag configuration, an error is being output to stderr, and the program exits.
-func processFlags() (config, error) {
+func processArgs() (config, error) {
 	conf := config{}
 
 	help := getopt.BoolLong("help", 'h', "Display help")
