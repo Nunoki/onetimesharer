@@ -6,24 +6,21 @@ import (
 	"flag"
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
-	"github.com/Nunoki/onetimesharer/crypt"
+	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
+	"github.com/Nunoki/onetimesharer/internal/pkg/storage"
 )
 
-const filename = "secrets.json"
-const defaultPort = 8000
+const defaultPort uint = 8000
 
 var passphrase string
 
 type config struct {
-	port     *int
+	port     *uint
 	https    *bool
 	certfile *string
 	keyfile  *string
@@ -35,28 +32,34 @@ type tplData struct {
 	ErrorMsg  string
 }
 
+type server struct {
+	config config
+	store  store
+}
+
 type jsonOutput struct {
 	Secret string `json:"secret"`
 }
 
-type collection map[string]string
+type store interface {
+	SaveSecret(secret string) (string, error)
+	ValidateSecret(key string) bool
+	ReadSecret(key string) (string, error)
+}
 
 func main() {
-	if err := verifyFile(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-		os.Exit(1)
-	}
-
 	conf, err := processFlags()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	passphrase = randStr(32)
+	passphrase = randomizer.RandStr(32)
 	fmt.Fprint(os.Stdout, "Passphrase is: "+passphrase+"\n")
+	store := storage.NewClient(passphrase)
 
-	serve(conf)
+	server := NewServer(conf, store)
+	server.Serve(*conf.port)
 }
 
 // processFlags processes passed arguments and sets up variables appropriately. If a conflict occurs
@@ -64,7 +67,7 @@ func main() {
 func processFlags() (config, error) {
 	conf := config{}
 
-	conf.port = flag.Int("port", defaultPort, "Port to run on")
+	conf.port = flag.Uint("port", defaultPort, "Port to run on")
 	conf.https = flag.Bool("https", false, "Whether to run on HTTPS (requires --certfile and --keyfile)")
 	conf.certfile = flag.String("certfile", "", "Path to certificate file, required when running on HTTPS")
 	conf.keyfile = flag.String("keyfile", "", "Path to key file, required when running on HTTPS")
@@ -77,27 +80,17 @@ func processFlags() (config, error) {
 	return conf, nil
 }
 
-// verifyFile makes sure the file with the secrets exists, by creating it if it doesn't already.
-// If an error occurs with either reading or creating it, it outputs the error and exits the
-// program.
-func verifyFile() error {
-	// TODO: test: https://pkg.go.dev/testing/fstest
-	_, err := os.ReadFile(filename)
-	if os.IsNotExist(err) {
-		if err = os.WriteFile(filename, []byte("{}"), os.FileMode(0700)); err != nil {
-			return fmt.Errorf("failed to create file: %s", filename)
-		}
+// DOCME
+func NewServer(c config, s store) server {
+	server := server{
+		config: c,
+		store:  s,
 	}
-
-	if err != nil {
-		return fmt.Errorf("could not read file: %s", filename)
-	}
-
-	return nil
+	return server
 }
 
-// serve starts listening on all the endpoints and passes the calls to the handlers
-func serve(c config) {
+// DOCME
+func (s server) Serve(port uint) {
 	// TODO: test all endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -109,7 +102,7 @@ func serve(c config) {
 		if r.Method == "GET" {
 			handleIndex(w, r)
 		} else if r.Method == "POST" {
-			handlePost(w, r)
+			handlePost(w, r, s.store)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 		}
@@ -118,7 +111,7 @@ func serve(c config) {
 	// #show_url
 	http.HandleFunc("/show", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {
-			handleShow(w, r)
+			handleShow(w, r, s.store)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 		}
@@ -126,13 +119,13 @@ func serve(c config) {
 
 	http.HandleFunc("/secret", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" {
-			handleFetchSecret(w, r)
+			handleFetchSecret(w, r, s.store)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	})
 
-	portStr := strconv.Itoa(*c.port)
+	portStr := strconv.Itoa(int(*s.config.port))
 	log.Print("Listening on port " + portStr)
 	log.Fatal(http.ListenAndServe(":"+portStr, nil))
 }
@@ -143,14 +136,14 @@ func handleIndex(w http.ResponseWriter, _ *http.Request) {
 }
 
 // handlePost stores the posted secret and outputs the generated key for reading it
-func handlePost(w http.ResponseWriter, r *http.Request) {
+func handlePost(w http.ResponseWriter, r *http.Request, s store) {
 	secret := r.FormValue("secret")
 	if secret == "" {
 		http.Error(w, "failed to read posted content", http.StatusBadRequest)
 		return
 	}
 
-	key, err := saveSecret(secret)
+	key, err := s.SaveSecret(secret)
 	if err != nil {
 		log.Print(err)
 		http.Error(w, "failed to save secret", http.StatusInternalServerError)
@@ -166,14 +159,14 @@ func handlePost(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleShow shows the button that displays the secret
-func handleShow(w http.ResponseWriter, r *http.Request) {
+func handleShow(w http.ResponseWriter, r *http.Request, s store) {
 	key := r.FormValue("key")
 	if key == "" {
 		http.Error(w, "key not specified", http.StatusBadRequest)
 		return
 	}
 
-	ok := validateSecret(key)
+	ok := s.ValidateSecret(key)
 	if !ok {
 		data := tplData{
 			ErrorMsg: "Could not find requested secret",
@@ -189,14 +182,14 @@ func handleShow(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleFetchSecret outputs the content of the secret in JSON format
-func handleFetchSecret(w http.ResponseWriter, r *http.Request) {
+func handleFetchSecret(w http.ResponseWriter, r *http.Request, s store) {
 	key := r.FormValue("key")
 	if key == "" {
 		http.Error(w, "key not specified", http.StatusBadRequest)
 		return
 	}
 
-	secret, err := readSecret(key)
+	secret, err := s.ReadSecret(key)
 	if err != nil {
 		log.Print(err)
 		http.Error(w, "failed to read secret", http.StatusInternalServerError)
@@ -219,119 +212,4 @@ func outputTpl(w http.ResponseWriter, data tplData) {
 	if err != nil {
 		log.Print(err)
 	}
-}
-
-// DOCME
-func saveSecret(secret string) (string, error) {
-	key := randStr(32)
-	secrets, err := readAllSecrets()
-	if err != nil {
-		return "", err
-	}
-
-	eKey, _ := crypt.Encrypt(key, passphrase)
-	eSecret, _ := crypt.Encrypt(secret, passphrase)
-
-	secrets[eKey] = string(eSecret)
-
-	if err := storeSecrets(secrets); err != nil {
-		return "", err
-	}
-
-	return key, nil
-}
-
-// DOCME
-func storeSecrets(secrets collection) error {
-	jsonData, err := json.Marshal(secrets)
-	if err != nil {
-		return err
-	}
-	if err := os.WriteFile(filename, jsonData, os.FileMode(0700)); err != nil {
-		return err
-	}
-	return nil
-}
-
-// DOCME
-func deleteSecret(secrets collection, key string) error {
-	delete(secrets, key)
-	if err := storeSecrets(secrets); err != nil {
-		return err
-	}
-	return nil
-}
-
-// DOCME
-func readSecret(key string) (string, error) {
-	secrets, err := readAllSecrets()
-	if err != nil {
-		return "", err
-	}
-
-	eKey, err := crypt.Encrypt(key, passphrase)
-	if err != nil {
-		return "", err
-	}
-
-	eSecret, ok := secrets[eKey]
-	if !ok {
-		return "", errors.New("not found")
-	}
-
-	secret, err := crypt.Decrypt(eSecret, passphrase)
-	if err != nil {
-		return "", err
-	}
-
-	if err := deleteSecret(secrets, eKey); err != nil {
-		return "", err
-	}
-
-	return secret, nil
-}
-
-// DOCME
-func validateSecret(key string) bool {
-	secrets, err := readAllSecrets()
-	if err != nil {
-		log.Print(err)
-		return false
-	}
-
-	eKey, err := crypt.Encrypt(key, passphrase)
-	if err != nil {
-		log.Print(err)
-		return false
-	}
-
-	_, ok := secrets[eKey]
-	return ok
-}
-
-// DOCME
-func readAllSecrets() (collection, error) {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	jsonData := collection{}
-	err = json.Unmarshal(content, &jsonData)
-	if err != nil {
-		return nil, err
-	}
-	return jsonData, nil
-}
-
-// randStr returns a random string of length n
-func randStr(n int) string {
-	rand.Seed(time.Now().UnixMilli())
-	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
-
-	s := make([]rune, n)
-	for i := range s {
-		s[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(s)
 }
