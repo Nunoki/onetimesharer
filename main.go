@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"flag"
 	"fmt"
 	"html/template"
 	"log"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
 	"github.com/Nunoki/onetimesharer/internal/pkg/storage"
+	"github.com/pborman/getopt/v2"
 )
 
 const defaultPort uint = 8000
@@ -67,11 +67,18 @@ func main() {
 func processFlags() (config, error) {
 	conf := config{}
 
-	conf.port = flag.Uint("port", defaultPort, "Port to run on")
-	conf.https = flag.Bool("https", false, "Whether to run on HTTPS (requires --certfile and --keyfile)")
-	conf.certfile = flag.String("certfile", "", "Path to certificate file, required when running on HTTPS")
-	conf.keyfile = flag.String("keyfile", "", "Path to key file, required when running on HTTPS")
-	flag.Parse()
+	help := getopt.BoolLong("help", 'h', "Display help")
+
+	conf.port = getopt.Uint('p', defaultPort, "Port to run on")
+	conf.https = getopt.Bool('s', "Secure; Whether to run on HTTPS (requires --certfile and --keyfile)")
+	conf.certfile = getopt.String('c', "", "Path to certificate file, required when running on HTTPS")
+	conf.keyfile = getopt.String('k', "", "Path to key file, required when running on HTTPS")
+	getopt.Parse()
+
+	if *help {
+		getopt.PrintUsage(os.Stdout)
+		os.Exit(0)
+	}
 
 	if *conf.https && (*conf.certfile == "" || *conf.keyfile == "") {
 		return config{}, errors.New("running on HTTPS requires the certification file and key file (see --help)")
