@@ -83,7 +83,13 @@ func indexHTML() string {
 				<div class="box error center">
 					<p>{{ .ErrorMsg }}</p>
 				</div>
-	
+
+				<p class="center">
+					<a href="/">
+						Create new secret
+					</a>
+				</p>
+
 			{{ else }}
 	
 				<form action="" method="post">
@@ -111,7 +117,7 @@ func indexHTML() string {
 				background: white; color: black;
 			}
 			* {
-				font-size:1.5rem; box-sizing:border-box;
+				font-size:1.2rem; box-sizing:border-box;
 			}
 			input,
 			textarea {
@@ -138,17 +144,8 @@ func indexHTML() string {
 				padding:1rem; width:100%; max-width:650px;
 			}
 			.container {
-				display:flex; padding:1rem; align-items:center; height:100%;
-			}
-			@media(min-width:800px) {
-				.container {
-					justify-content:center; flex-direction:row;
-				}
-			}
-			@media(max-width:799px) {
-				.container {
-					justify-content:center; flex-direction:column;
-				}
+				display:flex; flex-direction: column; justify-content: center; 
+				padding:1rem; align-items:center; height:100%;
 			}
 			@media(prefers-color-scheme:dark) {
 				body {
