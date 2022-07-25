@@ -8,24 +8,20 @@ import (
 	"log"
 	"os"
 
+	"github.com/Nunoki/onetimesharer/internal/pkg/crypter"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
 )
 
 const filename = "secrets.json"
 
 type storage struct {
-	Crypter crypter
-}
-
-type crypter interface {
-	Decrypt(encrypted string) (string, error)
-	Encrypt(plaintext string) (string, error)
+	Crypter crypter.Crypter
 }
 
 type collection map[string]string
 
 // DOCME
-func New(e crypter) storage {
+func New(e crypter.Crypter) storage {
 	if err := verifyFile(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
