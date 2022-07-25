@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/Nunoki/onetimesharer/internal/pkg/aescfb"
 	"github.com/Nunoki/onetimesharer/internal/pkg/filestorage"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
 	"github.com/pborman/getopt/v2"
@@ -52,15 +53,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	encKey := readEncKey()
-	store := filestorage.NewClient(encKey)
+	encKey := encryptionKey()
+	encrypter := aescfb.New(encKey)
+	store := filestorage.NewClient(encrypter)
 
 	server := NewServer(conf, store)
 	server.Serve()
 }
 
 // DOCME
-func readEncKey() (key string) {
+func encryptionKey() (key string) {
 	key = os.Getenv("OTS_ENCRYPTION_KEY")
 	if len(key) == 0 {
 		key = randomizer.RandStr(32)
