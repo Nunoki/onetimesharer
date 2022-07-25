@@ -59,7 +59,7 @@ func main() {
 	store := filestorage.NewClient(passphrase)
 
 	server := NewServer(conf, store)
-	server.Serve(*conf.port)
+	server.Serve()
 }
 
 // processArgs processes passed arguments and sets up variables appropriately. If a conflict occurs
@@ -97,7 +97,7 @@ func NewServer(c config, s store) server {
 }
 
 // DOCME
-func (s server) Serve(port uint) {
+func (s server) Serve() {
 	// TODO: test all endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
