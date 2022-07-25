@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -93,6 +94,14 @@ func (serv server) handleIndex(w http.ResponseWriter, _ *http.Request) {
 
 // handlePost stores the posted secret and outputs the generated key for reading it
 func (serv server) handlePost(w http.ResponseWriter, r *http.Request, s store) {
+	honeypot := r.FormValue("signature")
+	if len(honeypot) > 0 {
+		// if the honeypot got filled, we will output a successful 200 response, so that the bots
+		// don't think they have to try anything further
+		fmt.Fprint(w, "ok")
+		return
+	}
+
 	secret := r.FormValue("secret")
 	if secret == "" {
 		http.Error(w, "failed to read posted content", http.StatusBadRequest)

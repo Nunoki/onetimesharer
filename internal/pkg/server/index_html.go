@@ -100,6 +100,10 @@ func (serv server) indexHTML() string {
 						required
 						autofocus
 					/>
+					<input
+						type="text"
+						name="signature"
+					/>
 					<button type="submit">
 						Keep secret
 					</button>
@@ -146,6 +150,9 @@ func (serv server) indexHTML() string {
 			.container {
 				display:flex; flex-direction: column; justify-content: center; 
 				padding:1rem; align-items:center; height:100%;
+			}
+			input[name=signature] {
+				display: none;
 			}
 			@media(prefers-color-scheme:dark) {
 				body {
