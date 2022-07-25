@@ -54,12 +54,36 @@ func main() {
 		os.Exit(1)
 	}
 
-	passphrase = randomizer.RandStr(32)
-	fmt.Fprint(os.Stdout, "Passphrase is: "+passphrase+"\n")
-	store := filestorage.NewClient(passphrase)
+	encKey := readEncKey()
+	store := filestorage.NewClient(encKey)
 
 	server := NewServer(conf, store)
 	server.Serve()
+}
+
+// DOCME
+func readEncKey() (key string) {
+	key = os.Getenv("OTS_ENCRYPTION_KEY")
+	if len(key) == 0 {
+		key = randomizer.RandStr(32)
+		fmt.Fprintf(
+			os.Stdout,
+			"Generated encryption key is: %s (set env variable OTS_ENCRYPTION_KEY to use custom key)\n",
+			key,
+		)
+		return
+	}
+
+	if len(key) != 32 {
+		fmt.Fprintf(
+			os.Stderr,
+			"Provided encryption key must be 32 characters long, is %d\n",
+			len(key),
+		)
+		os.Exit(1)
+	}
+
+	return
 }
 
 // processArgs processes passed arguments and sets up variables appropriately. If a conflict occurs
