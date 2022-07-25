@@ -17,19 +17,17 @@ import (
 
 const defaultPort uint = 8000
 
-var passphrase string
-
 type config struct {
-	port     *uint
-	https    *bool
 	certfile *string
+	https    *bool
 	keyfile  *string
+	port     *uint
 }
 
 type tplData struct {
+	ErrorMsg  string
 	ShareURL  string
 	SecretKey string
-	ErrorMsg  string
 }
 
 type server struct {
@@ -42,9 +40,9 @@ type jsonOutput struct {
 }
 
 type store interface {
+	ReadSecret(key string) (string, error)
 	SaveSecret(secret string) (string, error)
 	ValidateSecret(key string) bool
-	ReadSecret(key string) (string, error)
 }
 
 func main() {
@@ -93,10 +91,10 @@ func processArgs() (config, error) {
 
 	help := getopt.BoolLong("help", 'h', "Display help")
 
-	conf.port = getopt.Uint('p', defaultPort, "Port to run on")
-	conf.https = getopt.Bool('s', "Secure; Whether to run on HTTPS (requires --certfile and --keyfile)")
 	conf.certfile = getopt.String('c', "", "Path to certificate file, required when running on HTTPS")
+	conf.https = getopt.Bool('s', "Secure; Whether to run on HTTPS (requires --certfile and --keyfile)")
 	conf.keyfile = getopt.String('k', "", "Path to key file, required when running on HTTPS")
+	conf.port = getopt.Uint('p', defaultPort, "Port to run on")
 	getopt.Parse()
 
 	if *help {
