@@ -25,7 +25,7 @@ type crypter interface {
 type collection map[string]string
 
 // DOCME
-func NewClient(e crypter) storage {
+func New(e crypter) storage {
 	if err := verifyFile(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)

@@ -55,7 +55,7 @@ func main() {
 
 	encKey := encryptionKey()
 	encrypter := aescfb.New(encKey)
-	store := filestorage.NewClient(encrypter)
+	store := filestorage.New(encrypter)
 
 	server := NewServer(conf, store)
 	server.Serve()
