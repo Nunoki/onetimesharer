@@ -84,7 +84,11 @@ func (serv server) Serve() {
 
 	portStr := strconv.Itoa(int(*serv.config.Port))
 	log.Print("Listening on port " + portStr)
-	log.Fatal(http.ListenAndServe(":"+portStr, nil))
+	if *serv.config.HTTPS {
+		log.Fatal(http.ListenAndServeTLS(":"+portStr, *serv.config.Certfile, *serv.config.Keyfile, nil))
+	} else {
+		log.Fatal(http.ListenAndServe(":"+portStr, nil))
+	}
 }
 
 // handleIndex serves the default page for creating a new secret
@@ -115,7 +119,11 @@ func (serv server) handlePost(w http.ResponseWriter, r *http.Request, s store) {
 		return
 	}
 
-	shareURL := "http://" + r.Host + "/show?key=" + key
+	proto := "http"
+	if *serv.config.HTTPS {
+		proto = "https"
+	}
+	shareURL := proto + "://" + r.Host + "/show?key=" + key
 	data := tplData{
 		// #show_url
 		ShareURL: shareURL,

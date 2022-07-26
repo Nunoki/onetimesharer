@@ -1,2 +1,4 @@
 secrets.json
 /tmp
+*.key
+*.crt

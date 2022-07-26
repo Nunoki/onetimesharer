@@ -12,7 +12,8 @@ import (
 	"github.com/pborman/getopt/v2"
 )
 
-const defaultPort uint = 8000
+const defaultPortHTTP uint = 8000
+const defaultPortHTTPS uint = 443
 
 func main() {
 	conf, err := processArgs()
@@ -64,7 +65,7 @@ func processArgs() (server.Config, error) {
 	conf.Certfile = getopt.String('c', "", "Path to certificate file, required when running on HTTPS")
 	conf.HTTPS = getopt.Bool('s', "Secure; Whether to run on HTTPS (requires --certfile and --keyfile)")
 	conf.Keyfile = getopt.String('k', "", "Path to key file, required when running on HTTPS")
-	conf.Port = getopt.Uint('p', defaultPort, "Port to run on")
+	conf.Port = getopt.Uint('p', 0, "Port to run on")
 	getopt.Parse()
 
 	if *help {
@@ -74,6 +75,14 @@ func processArgs() (server.Config, error) {
 
 	if *conf.HTTPS && (*conf.Certfile == "" || *conf.Keyfile == "") {
 		return server.Config{}, errors.New("running on HTTPS requires the certification file and key file (see --help)")
+	}
+
+	if *conf.Port == 0 {
+		if *conf.HTTPS {
+			*conf.Port = defaultPortHTTPS
+		} else {
+			*conf.Port = defaultPortHTTP
+		}
 	}
 
 	return conf, nil
