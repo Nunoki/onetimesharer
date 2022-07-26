@@ -1,4 +1,4 @@
-package storage
+package filestorage
 
 import (
 	"encoding/json"
@@ -8,39 +8,39 @@ import (
 	"log"
 	"os"
 
-	"github.com/Nunoki/onetimesharer/internal/pkg/crypt"
+	"github.com/Nunoki/onetimesharer/internal/pkg/crypter"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
 )
 
 const filename = "secrets.json"
 
-type Store struct {
-	Passphrase string
+type storage struct {
+	Crypter crypter.Crypter
 }
 
 type collection map[string]string
 
 // DOCME
-func NewClient(passphrase string) Store {
+func New(e crypter.Crypter) storage {
 	if err := verifyFile(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
 	}
 
-	store := Store{
-		Passphrase: passphrase,
+	store := storage{
+		Crypter: e,
 	}
 	return store
 }
 
 // DOCME
-func (s Store) ReadSecret(key string) (string, error) {
+func (s storage) ReadSecret(key string) (string, error) {
 	secrets, err := readAllSecrets()
 	if err != nil {
 		return "", err
 	}
 
-	eKey, err := crypt.Encrypt(key, s.Passphrase)
+	eKey, err := s.Crypter.Encrypt(key)
 	if err != nil {
 		return "", err
 	}
@@ -50,7 +50,7 @@ func (s Store) ReadSecret(key string) (string, error) {
 		return "", errors.New("not found")
 	}
 
-	secret, err := crypt.Decrypt(eSecret, s.Passphrase)
+	secret, err := s.Crypter.Decrypt(eSecret)
 	if err != nil {
 		return "", err
 	}
@@ -63,15 +63,15 @@ func (s Store) ReadSecret(key string) (string, error) {
 }
 
 // DOCME
-func (s Store) SaveSecret(secret string) (string, error) {
+func (s storage) SaveSecret(secret string) (string, error) {
 	key := randomizer.RandStr(32)
 	secrets, err := readAllSecrets()
 	if err != nil {
 		return "", err
 	}
 
-	eKey, _ := crypt.Encrypt(key, s.Passphrase)
-	eSecret, _ := crypt.Encrypt(secret, s.Passphrase)
+	eKey, _ := s.Crypter.Encrypt(key)
+	eSecret, _ := s.Crypter.Encrypt(secret)
 
 	secrets[eKey] = string(eSecret)
 
@@ -83,14 +83,14 @@ func (s Store) SaveSecret(secret string) (string, error) {
 }
 
 // DOCME
-func (s Store) ValidateSecret(key string) bool {
+func (s storage) ValidateSecret(key string) bool {
 	secrets, err := readAllSecrets()
 	if err != nil {
 		log.Print(err)
 		return false
 	}
 
-	eKey, err := crypt.Encrypt(key, s.Passphrase)
+	eKey, err := s.Crypter.Encrypt(key)
 	if err != nil {
 		log.Print(err)
 		return false

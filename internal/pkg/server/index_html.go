@@ -1,7 +1,7 @@
-package main
+package server
 
 // indexHTML returns the contents of the index.html page
-func indexHTML() string {
+func (serv server) indexHTML() string {
 	return `<!DOCTYPE html>
 	<html>
 	<head>
@@ -100,6 +100,10 @@ func indexHTML() string {
 						required
 						autofocus
 					/>
+					<input
+						type="text"
+						name="signature"
+					/>
 					<button type="submit">
 						Keep secret
 					</button>
@@ -146,6 +150,9 @@ func indexHTML() string {
 			.container {
 				display:flex; flex-direction: column; justify-content: center; 
 				padding:1rem; align-items:center; height:100%;
+			}
+			input[name=signature] {
+				display: none;
 			}
 			@media(prefers-color-scheme:dark) {
 				body {

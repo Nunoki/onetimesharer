@@ -1,4 +1,4 @@
-package crypt
+package aescfb
 
 import (
 	"crypto/aes"
@@ -8,9 +8,20 @@ import (
 
 var bytes = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
 
+type encrypter struct {
+	Key string
+}
+
+// DOCME
+func New(key string) encrypter {
+	return encrypter{
+		Key: key,
+	}
+}
+
 // Encrypt attempts to encrypt the passed plaintext message
-func Encrypt(plaintext, key string) (string, error) {
-	block, err := aes.NewCipher([]byte(key))
+func (e encrypter) Encrypt(plaintext string) (string, error) {
+	block, err := aes.NewCipher([]byte(e.Key))
 	if err != nil {
 		return "", err
 	}
@@ -22,8 +33,8 @@ func Encrypt(plaintext, key string) (string, error) {
 }
 
 // Decrypt tries to decrypt the encrypted message
-func Decrypt(encrypted, key string) (string, error) {
-	block, err := aes.NewCipher([]byte(key))
+func (e encrypter) Decrypt(encrypted string) (string, error) {
+	block, err := aes.NewCipher([]byte(e.Key))
 	if err != nil {
 		return "", err
 	}
