@@ -34,7 +34,7 @@ func main() {
 func encryptionKey() (key string) {
 	key = os.Getenv("OTS_ENCRYPTION_KEY")
 	if len(key) == 0 {
-		key = randomizer.RandStr(32)
+		key = randomizer.String(32)
 		fmt.Fprintf(
 			os.Stdout,
 			"Generated encryption key is: %s (set env variable OTS_ENCRYPTION_KEY to use custom key)\n",

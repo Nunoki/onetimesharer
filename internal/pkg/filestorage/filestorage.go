@@ -64,7 +64,7 @@ func (s storage) ReadSecret(key string) (string, error) {
 
 // DOCME
 func (s storage) SaveSecret(secret string) (string, error) {
-	key := randomizer.RandStr(32)
+	key := randomizer.String(32)
 	secrets, err := readAllSecrets()
 	if err != nil {
 		return "", err

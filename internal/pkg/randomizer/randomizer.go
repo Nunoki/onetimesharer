@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// RandStr returns a random string of the defined length
-func RandStr(length uint8) string {
+// String returns a random string of the defined length
+func String(length uint8) string {
 	rand.Seed(time.Now().UnixMilli())
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
