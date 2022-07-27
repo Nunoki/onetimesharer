@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Nunoki/onetimesharer/internal/pkg/aescfb"
 	"github.com/Nunoki/onetimesharer/internal/pkg/filestorage"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
 	"github.com/Nunoki/onetimesharer/internal/pkg/server"
+	"github.com/Nunoki/onetimesharer/pkg/aescfb"
 )
 
 const defaultPortHTTP uint = 8000
