@@ -34,7 +34,7 @@ type jsonOutput struct {
 type store interface {
 	ReadSecret(key string) (string, error)
 	SaveSecret(secret string) (string, error)
-	ValidateSecret(key string) bool
+	ValidateSecret(key string) (bool, error)
 }
 
 // DOCME
@@ -139,7 +139,10 @@ func (serv server) handleShow(w http.ResponseWriter, r *http.Request, s store) {
 		return
 	}
 
-	ok := s.ValidateSecret(key)
+	ok, err := s.ValidateSecret(key)
+	if err != nil {
+		log.Print(err)
+	}
 	if !ok {
 		data := tplData{
 			ErrorMsg: "Could not find requested secret",
