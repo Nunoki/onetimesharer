@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"github.com/Nunoki/onetimesharer/internal/pkg/crypter"
@@ -22,6 +21,7 @@ type collection map[string]string
 
 // DOCME
 func New(e crypter.Crypter) storage {
+	// TODO: return errors instead of printing directly to stderr
 	if err := verifyFile(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
@@ -83,21 +83,20 @@ func (s storage) SaveSecret(secret string) (string, error) {
 }
 
 // DOCME
-func (s storage) ValidateSecret(key string) bool {
+func (s storage) ValidateSecret(key string) (bool, error) {
+	// TODO: implement change to interface
 	secrets, err := readAllSecrets()
 	if err != nil {
-		log.Print(err)
-		return false
+		return false, err
 	}
 
 	eKey, err := s.Crypter.Encrypt(key)
 	if err != nil {
-		log.Print(err)
-		return false
+		return false, err
 	}
 
 	_, ok := secrets[eKey]
-	return ok
+	return ok, nil
 }
 
 // DOCME
