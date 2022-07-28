@@ -1,19 +1,26 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/Nunoki/onetimesharer/internal/pkg/filestorage"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
 	"github.com/Nunoki/onetimesharer/internal/pkg/server"
+	"github.com/Nunoki/onetimesharer/internal/pkg/sqlite"
 	"github.com/Nunoki/onetimesharer/pkg/aescfb"
 )
 
 const defaultPortHTTP uint = 8000
 const defaultPortHTTPS uint = 443
+
+var (
+	ctx = context.Background()
+)
 
 func main() {
 	conf, err := processArgs()
@@ -24,7 +31,16 @@ func main() {
 
 	encKey := encryptionKey()
 	encrypter := aescfb.New(encKey)
-	store := filestorage.New(encrypter)
+
+	var store server.Store
+	if *conf.JSONFile {
+		store = filestorage.New(encrypter)
+	} else {
+		store, err = sqlite.New(ctx, encrypter)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	server := server.New(conf, store)
 	server.Serve()
@@ -69,6 +85,11 @@ func processArgs() (server.Config, error) {
 		"https",
 		false,
 		"Whether to run on HTTPS (requires --certfile and --keyfile)",
+	)
+	conf.JSONFile = flag.Bool(
+		"json",
+		false,
+		"Use a JSON file as storage instead of the default SQLite database",
 	)
 	conf.Keyfile = flag.String(
 		"keyfile",

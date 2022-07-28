@@ -11,6 +11,7 @@ import (
 
 type Config struct {
 	Certfile *string
+	JSONFile *bool
 	HTTPS    *bool
 	Keyfile  *string
 	Port     *uint
@@ -24,21 +25,21 @@ type tplData struct {
 
 type server struct {
 	config Config
-	store  store
+	store  Store
 }
 
 type jsonOutput struct {
 	Secret string `json:"secret"`
 }
 
-type store interface {
+type Store interface {
 	ReadSecret(key string) (string, error)
 	SaveSecret(secret string) (string, error)
 	ValidateSecret(key string) (bool, error)
 }
 
 // DOCME
-func New(c Config, s store) server {
+func New(c Config, s Store) server {
 	server := server{
 		config: c,
 		store:  s,
@@ -97,7 +98,7 @@ func (serv server) handleIndex(w http.ResponseWriter, _ *http.Request) {
 }
 
 // handlePost stores the posted secret and outputs the generated key for reading it
-func (serv server) handlePost(w http.ResponseWriter, r *http.Request, s store) {
+func (serv server) handlePost(w http.ResponseWriter, r *http.Request, s Store) {
 	honeypot := r.FormValue("signature")
 	if len(honeypot) > 0 {
 		// if the honeypot got filled, we will output a successful 200 response, so that the bots
@@ -132,7 +133,7 @@ func (serv server) handlePost(w http.ResponseWriter, r *http.Request, s store) {
 }
 
 // handleShow shows the button that displays the secret
-func (serv server) handleShow(w http.ResponseWriter, r *http.Request, s store) {
+func (serv server) handleShow(w http.ResponseWriter, r *http.Request, s Store) {
 	key := r.FormValue("key")
 	if key == "" {
 		http.Error(w, "key not specified", http.StatusBadRequest)
@@ -158,7 +159,7 @@ func (serv server) handleShow(w http.ResponseWriter, r *http.Request, s store) {
 }
 
 // handleFetchSecret outputs the content of the secret in JSON format
-func (serv server) handleFetchSecret(w http.ResponseWriter, r *http.Request, s store) {
+func (serv server) handleFetchSecret(w http.ResponseWriter, r *http.Request, s Store) {
 	key := r.FormValue("key")
 	if key == "" {
 		http.Error(w, "key not specified", http.StatusBadRequest)
