@@ -48,6 +48,7 @@ func main() {
 
 	// Perform graceful shutdown when interrupted from shell
 	go func() {
+		fmt.Fprintf(os.Stdout, "Listening on port %d\n", *conf.Port)
 		server.Serve()
 	}()
 

@@ -90,7 +90,6 @@ func (serv server) Serve() {
 	})
 
 	portStr := strconv.Itoa(int(*serv.config.Port))
-	log.Print("Listening on port " + portStr)
 	if *serv.config.HTTPS {
 		log.Fatal(http.ListenAndServeTLS(":"+portStr, *serv.config.Certfile, *serv.config.Keyfile, nil))
 	} else {
