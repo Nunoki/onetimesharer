@@ -6,12 +6,17 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sync"
 
 	"github.com/Nunoki/onetimesharer/internal/pkg/crypter"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
 )
 
 const filename = "secrets.json"
+
+var (
+	mutex sync.Mutex
+)
 
 type storage struct {
 	Crypter crypter.Crypter
@@ -64,6 +69,11 @@ func (s storage) ReadSecret(key string) (string, error) {
 
 // DOCME
 func (s storage) SaveSecret(secret string) (string, error) {
+	(&mutex).Lock()
+	defer func() {
+		(&mutex).Unlock()
+	}()
+
 	key := randomizer.String(32)
 	secrets, err := readAllSecrets()
 	if err != nil {
