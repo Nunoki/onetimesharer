@@ -150,6 +150,7 @@ func (serv server) handleShow(w http.ResponseWriter, r *http.Request, s Store) {
 		log.Print(err)
 	}
 	if !ok {
+		w.WriteHeader(http.StatusNotFound)
 		data := tplData{
 			ErrorMsg: "Could not find requested secret",
 		}
