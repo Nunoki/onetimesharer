@@ -132,8 +132,7 @@ func (serv server) handlePost(w http.ResponseWriter, r *http.Request, s Store) {
 	}
 	shareURL := proto + "://" + r.Host + "/show?key=" + key
 	data := tplData{
-		// #show_url
-		ShareURL: shareURL,
+		ShareURL: shareURL, // #show_url
 	}
 	serv.outputTpl(w, data)
 }
