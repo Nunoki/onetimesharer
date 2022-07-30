@@ -7,7 +7,7 @@ import (
 
 // String returns a random string of the defined length
 func String(length uint8) string {
-	rand.Seed(time.Now().UnixMilli())
+	rand.Seed(time.Now().UnixNano())
 	var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 	s := make([]rune, length)
