@@ -1,8 +1,6 @@
 package sqlite
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
@@ -10,13 +8,16 @@ import (
 
 // DOCME
 func (s sqliteStore) ReadSecret(key string) (string, error) {
-	hashKey := md5hash(key)
+	encKey, err := s.Crypter.Encrypt(key)
+	if err != nil {
+		return "", fmt.Errorf("failed to encrypt key when reading: %w", err)
+	}
 
 	var content string
-	err := s.Database.QueryRowContext(
+	err = s.Database.QueryRowContext(
 		s.Context,
 		querySelect,
-		hashKey,
+		encKey,
 	).Scan(&content)
 
 	if err != nil {
@@ -28,7 +29,7 @@ func (s sqliteStore) ReadSecret(key string) (string, error) {
 		return "", fmt.Errorf("failed to decrypt secret: %w", err)
 	}
 
-	err = s.deleteSecret(hashKey)
+	err = s.deleteSecret(encKey)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to delete secret with key %s: %w", key, err)
@@ -40,7 +41,11 @@ func (s sqliteStore) ReadSecret(key string) (string, error) {
 // DOCME
 func (s sqliteStore) SaveSecret(secret string) (string, error) {
 	key := randomizer.String(32)
-	hashKey := md5hash(key)
+	encKey, err := s.Crypter.Encrypt(key)
+	if err != nil {
+		return "", fmt.Errorf("failed to encrypt key when saving: %w", err)
+	}
+
 	encSecret, err := s.Crypter.Encrypt(secret)
 	if err != nil {
 		return "", fmt.Errorf("failed to encrypt secret: %w", err)
@@ -49,7 +54,7 @@ func (s sqliteStore) SaveSecret(secret string) (string, error) {
 	_, err = s.Database.ExecContext(
 		s.Context,
 		queryInsert,
-		hashKey,
+		encKey,
 		encSecret,
 	)
 	if err != nil {
@@ -61,13 +66,17 @@ func (s sqliteStore) SaveSecret(secret string) (string, error) {
 
 // DOCME
 func (s sqliteStore) ValidateSecret(key string) (bool, error) {
-	hashKey := md5hash(key)
+	encKey, err := s.Crypter.Encrypt(key)
+	if err != nil {
+		return false, fmt.Errorf("failed to encrypt key when validating: %w", err)
+	}
 
-	err := s.Database.QueryRowContext(
+	var content string
+	err = s.Database.QueryRowContext(
 		s.Context,
 		querySelect,
-		hashKey,
-	).Scan(nil)
+		encKey,
+	).Scan(&content)
 
 	if err != nil {
 		return false, err
@@ -77,13 +86,7 @@ func (s sqliteStore) ValidateSecret(key string) (bool, error) {
 }
 
 // DOCME
-func (s sqliteStore) deleteSecret(hashKey string) error {
-	_, err := s.Database.ExecContext(s.Context, queryDelete, hashKey)
+func (s sqliteStore) deleteSecret(encKey string) error {
+	_, err := s.Database.ExecContext(s.Context, queryDelete, encKey)
 	return err
-}
-
-// DOCME
-func md5hash(input string) (hash string) {
-	sum := md5.Sum([]byte(input))
-	return hex.EncodeToString(sum[:])
 }
