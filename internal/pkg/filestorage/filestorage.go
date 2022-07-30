@@ -100,6 +100,11 @@ func (s storage) ValidateSecret(key string) (bool, error) {
 }
 
 // DOCME
+func (s storage) Close() error {
+	return nil
+}
+
+// DOCME
 func storeSecrets(secrets collection) error {
 	jsonData, err := json.Marshal(secrets)
 	if err != nil {

@@ -36,6 +36,7 @@ type Store interface {
 	ReadSecret(key string) (string, error)
 	SaveSecret(secret string) (string, error)
 	ValidateSecret(key string) (bool, error)
+	Close() error
 }
 
 // DOCME
@@ -45,6 +46,11 @@ func New(c Config, s Store) server {
 		store:  s,
 	}
 	return server
+}
+
+// DOCME
+func (serv server) Shutdown() error {
+	return serv.store.Close()
 }
 
 // DOCME

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Nunoki/onetimesharer/internal/pkg/filestorage"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
@@ -43,7 +45,20 @@ func main() {
 	}
 
 	server := server.New(conf, store)
-	server.Serve()
+
+	// Perform graceful shutdown when interrupted from shell
+	go func() {
+		server.Serve()
+	}()
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	<-done
+	if err := server.Shutdown(); err != nil {
+		log.Fatalf("Server shutdown failed:%+v", err)
+	}
+	log.Print("Server exited properly")
 }
 
 // DOCME
