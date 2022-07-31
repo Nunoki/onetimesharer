@@ -94,7 +94,6 @@ func (s storage) SaveSecret(secret string) (string, error) {
 
 // DOCME
 func (s storage) ValidateSecret(key string) (bool, error) {
-	// TODO: implement change to interface
 	secrets, err := readAllSecrets()
 	if err != nil {
 		return false, err
