@@ -49,7 +49,10 @@ func main() {
 	// Perform graceful shutdown when interrupted from shell
 	go func() {
 		fmt.Fprintf(os.Stdout, "Listening on port %d\n", *conf.Port)
-		server.Serve()
+		err := server.Serve()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}()
 
 	done := make(chan os.Signal, 1)

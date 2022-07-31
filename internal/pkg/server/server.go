@@ -54,7 +54,7 @@ func (serv server) Shutdown() error {
 }
 
 // DOCME
-func (serv server) Serve() {
+func (serv server) Serve() error {
 	// TODO: test all endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -91,9 +91,9 @@ func (serv server) Serve() {
 
 	portStr := strconv.Itoa(int(*serv.config.Port))
 	if *serv.config.HTTPS {
-		log.Fatal(http.ListenAndServeTLS(":"+portStr, *serv.config.Certfile, *serv.config.Keyfile, nil))
+		return http.ListenAndServeTLS(":"+portStr, *serv.config.Certfile, *serv.config.Keyfile, nil)
 	} else {
-		log.Fatal(http.ListenAndServe(":"+portStr, nil))
+		return http.ListenAndServe(":"+portStr, nil)
 	}
 }
 
