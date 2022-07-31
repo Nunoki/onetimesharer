@@ -34,22 +34,26 @@ func main() {
 	encKey := encryptionKey()
 	encrypter := aescfb.New(encKey)
 
-	var store server.Store
+	var store server.Storer
 	if *conf.JSONFile {
-		store = filestorage.New(encrypter)
+		store, err = filestorage.New(encrypter)
 	} else {
 		store, err = sqlite.New(ctx, encrypter)
-		if err != nil {
-			log.Fatal(err)
-		}
+	}
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	server := server.New(conf, store)
+	// TODO: middleware to prevent large payload attack
 
 	// Perform graceful shutdown when interrupted from shell
 	go func() {
 		fmt.Fprintf(os.Stdout, "Listening on port %d\n", *conf.Port)
-		server.Serve()
+		err := server.Serve()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}()
 
 	done := make(chan os.Signal, 1)
