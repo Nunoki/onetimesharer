@@ -24,21 +24,20 @@ type storage struct {
 
 type collection map[string]string
 
-// DOCME
-func New(e crypter.Crypter) storage {
-	// TODO: return errors instead of printing directly to stderr
+// New returns an instance of storage with crypter e attached.
+func New(e crypter.Crypter) (storage, error) {
 	if err := verifyFile(); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-		os.Exit(1)
+		return storage{}, fmt.Errorf("failed to verify JSON file for storage: %w", err)
 	}
 
 	store := storage{
 		Crypter: e,
 	}
-	return store
+	return store, nil
 }
 
-// DOCME
+// ReadSecret tries to read the secret under the passed (unencrypted) key, then decrypt the secret
+// and return it in plain text.
 func (s storage) ReadSecret(key string) (string, error) {
 	secrets, err := readAllSecrets()
 	if err != nil {
@@ -67,7 +66,8 @@ func (s storage) ReadSecret(key string) (string, error) {
 	return secret, nil
 }
 
-// DOCME
+// SaveSecret attempts to generate a new key for the passed secret, and save it in an encrypted
+// format, then return its corresponding unencrypted key.
 func (s storage) SaveSecret(secret string) (string, error) {
 	(&mutex).Lock()
 	defer func() {
@@ -92,7 +92,7 @@ func (s storage) SaveSecret(secret string) (string, error) {
 	return key, nil
 }
 
-// DOCME
+// ValidateSecret returns whether a secret exists under the defined key.
 func (s storage) ValidateSecret(key string) (bool, error) {
 	secrets, err := readAllSecrets()
 	if err != nil {
@@ -108,12 +108,14 @@ func (s storage) ValidateSecret(key string) (bool, error) {
 	return ok, nil
 }
 
-// DOCME
+// Close exists to satisfy the server.Storer interface, but doesn't do anything for this
+// implementation and cannot fail. Returned error will always be nil.
 func (s storage) Close() error {
 	return nil
 }
 
-// DOCME
+// storeSecrets attempts to store all secrets passed in the argument. Passed secrets should already
+// be encrypted.
 func storeSecrets(secrets collection) error {
 	jsonData, err := json.Marshal(secrets)
 	if err != nil {
@@ -125,7 +127,8 @@ func storeSecrets(secrets collection) error {
 	return nil
 }
 
-// DOCME
+// deleteSecret attempts to delete the secret under the passed key from the passed collection of
+// secrets. If the passed key already doesn't exist, no error is returned.
 func deleteSecret(secrets collection, key string) error {
 	delete(secrets, key)
 	if err := storeSecrets(secrets); err != nil {
@@ -134,7 +137,7 @@ func deleteSecret(secrets collection, key string) error {
 	return nil
 }
 
-// DOCME
+// readAllSecrets attempts to read the entire file of secrets, and return them as a collection.
 func readAllSecrets() (collection, error) {
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -149,9 +152,7 @@ func readAllSecrets() (collection, error) {
 	return jsonData, nil
 }
 
-// verifyFile makes sure the file with the secrets exists, by creating it if it doesn't already.
-// If an error occurs with either reading or creating it, it outputs the error and exits the
-// program.
+// verifyFile makes sure the file with the secrets exists, creating it if necessary.
 func verifyFile() error {
 	// TODO: test: https://pkg.go.dev/testing/fstest
 	_, err := os.ReadFile(filename)

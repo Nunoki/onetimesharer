@@ -36,12 +36,12 @@ func main() {
 
 	var store server.Storer
 	if *conf.JSONFile {
-		store = filestorage.New(encrypter)
+		store, err = filestorage.New(encrypter)
 	} else {
 		store, err = sqlite.New(ctx, encrypter)
-		if err != nil {
-			log.Fatal(err)
-		}
+	}
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	server := server.New(conf, store)
