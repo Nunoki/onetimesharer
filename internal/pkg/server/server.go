@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/lucas-clemente/quic-go/http3"
 )
 
 type Config struct {
@@ -91,7 +93,7 @@ func (serv server) Serve() {
 
 	portStr := strconv.Itoa(int(*serv.config.Port))
 	if *serv.config.HTTPS {
-		log.Fatal(http.ListenAndServeTLS(":"+portStr, *serv.config.Certfile, *serv.config.Keyfile, nil))
+		log.Fatal(http3.ListenAndServe(":"+portStr, *serv.config.Certfile, *serv.config.Keyfile, nil))
 	} else {
 		log.Fatal(http.ListenAndServe(":"+portStr, nil))
 	}
