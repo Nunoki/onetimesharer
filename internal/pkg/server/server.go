@@ -21,14 +21,14 @@ type tplData struct {
 
 type server struct {
 	config Config
-	store  Store
+	store  Storer
 }
 
 type jsonOutput struct {
 	Secret string `json:"secret"`
 }
 
-type Store interface {
+type Storer interface {
 	ReadSecret(key string) (string, error)
 	SaveSecret(secret string) (string, error)
 	ValidateSecret(key string) (bool, error)
@@ -36,7 +36,7 @@ type Store interface {
 }
 
 // DOCME
-func New(c Config, s Store) server {
+func New(c Config, s Storer) server {
 	server := server{
 		config: c,
 		store:  s,

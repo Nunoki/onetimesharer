@@ -34,7 +34,7 @@ func main() {
 	encKey := encryptionKey()
 	encrypter := aescfb.New(encKey)
 
-	var store server.Store
+	var store server.Storer
 	if *conf.JSONFile {
 		store = filestorage.New(encrypter)
 	} else {

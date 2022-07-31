@@ -14,7 +14,7 @@ func (serv server) handleIndex(w http.ResponseWriter, _ *http.Request) {
 }
 
 // handlePost stores the posted secret and outputs the generated key for reading it
-func (serv server) handlePost(w http.ResponseWriter, r *http.Request, s Store) {
+func (serv server) handlePost(w http.ResponseWriter, r *http.Request, s Storer) {
 	honeypot := r.FormValue("signature")
 	if len(honeypot) > 0 {
 		// if the honeypot got filled, we will output a successful 200 response, so that the bots
@@ -48,7 +48,7 @@ func (serv server) handlePost(w http.ResponseWriter, r *http.Request, s Store) {
 }
 
 // handleShow shows the button that displays the secret
-func (serv server) handleShow(w http.ResponseWriter, r *http.Request, s Store) {
+func (serv server) handleShow(w http.ResponseWriter, r *http.Request, s Storer) {
 	key := r.FormValue("key")
 	if key == "" {
 		http.Error(w, "key not specified", http.StatusBadRequest)
@@ -75,7 +75,7 @@ func (serv server) handleShow(w http.ResponseWriter, r *http.Request, s Store) {
 }
 
 // handleFetchSecret outputs the content of the secret in JSON format
-func (serv server) handleFetchSecret(w http.ResponseWriter, r *http.Request, s Store) {
+func (serv server) handleFetchSecret(w http.ResponseWriter, r *http.Request, s Storer) {
 	key := r.FormValue("key")
 	if key == "" {
 		http.Error(w, "key not specified", http.StatusBadRequest)
