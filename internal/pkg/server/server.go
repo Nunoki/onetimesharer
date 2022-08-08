@@ -3,15 +3,9 @@ package server
 import (
 	"net/http"
 	"strconv"
-)
 
-type Config struct {
-	Certfile *string
-	JSONFile *bool
-	HTTPS    *bool
-	Keyfile  *string
-	Port     *uint
-}
+	"github.com/Nunoki/onetimesharer/internal/pkg/config"
+)
 
 type tplData struct {
 	ErrorMsg  string
@@ -20,7 +14,7 @@ type tplData struct {
 }
 
 type server struct {
-	config Config
+	config config.Config
 	store  Storer
 }
 
@@ -36,7 +30,7 @@ type Storer interface {
 }
 
 // New returns a new instance of the server.
-func New(c Config, s Storer) server {
+func New(c config.Config, s Storer) server {
 	server := server{
 		config: c,
 		store:  s,

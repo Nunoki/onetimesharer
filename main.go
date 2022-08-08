@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Nunoki/onetimesharer/internal/pkg/config"
 	"github.com/Nunoki/onetimesharer/internal/pkg/crypter"
 	"github.com/Nunoki/onetimesharer/internal/pkg/filestorage"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
@@ -83,10 +84,8 @@ func encryptionKey() (key string) {
 
 // configuration processes passed arguments and sets up variables appropriately. If a conflict
 // occurs with flag configuration, an error is being output to stderr, and the program exits.
-func configuration() server.Config {
-	// TODO: it's main that should declare the Config struct so that server implementation
-	// can be swapped
-	conf := server.Config{}
+func configuration() config.Config {
+	conf := config.Config{}
 
 	conf.Certfile = flag.String(
 		"certfile",
@@ -137,7 +136,7 @@ func configuration() server.Config {
 // store returns an instance of a store for the secrets. It will use the configuration to determine
 // which store will be used. If an error occurs on store initialization, an error is output to
 // stderr and the program exits.
-func store(encrypter crypter.Crypter, conf server.Config) server.Storer {
+func store(encrypter crypter.Crypter, conf config.Config) server.Storer {
 	var store server.Storer
 	var err error
 	if *conf.JSONFile {
