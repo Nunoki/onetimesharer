@@ -59,7 +59,9 @@ func (serv server) Serve() error {
 		if r.Method == "GET" {
 			serv.handleIndex(w, r)
 		} else if r.Method == "POST" {
-			serv.handlePost(w, r, serv.store)
+			payloadLimit(*serv.config.PayloadLimit, func(w http.ResponseWriter, r *http.Request) {
+				serv.handlePost(w, r, serv.store)
+			})(w, r)
 		} else {
 			w.WriteHeader(http.StatusBadRequest)
 		}

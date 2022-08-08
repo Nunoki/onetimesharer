@@ -20,6 +20,7 @@ import (
 
 const defaultPortHTTP uint = 8000
 const defaultPortHTTPS uint = 443
+const defaultPayloadLimitBytes = 5000
 
 var (
 	ctx = context.Background()
@@ -106,6 +107,11 @@ func configuration() config.Config {
 		"keyfile",
 		"",
 		"Path to key file, required when running on HTTPS",
+	)
+	conf.PayloadLimit = flag.Uint(
+		"payload",
+		defaultPayloadLimitBytes,
+		"Limit on number of bytes allowed to be posted in the request body, to prevent large payload attacks. Note this includes the entire JSON message, not just the contents of the secret.",
 	)
 	conf.Port = flag.Uint(
 		"port",
