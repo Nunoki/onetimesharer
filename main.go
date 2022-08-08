@@ -35,7 +35,6 @@ func main() {
 	store := store(encrypter, conf)
 
 	server := server.New(conf, store)
-	// TODO: middleware to prevent large payload attack
 
 	// Perform graceful shutdown when interrupted from shell
 	go func() {
