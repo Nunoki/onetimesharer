@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -10,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/Nunoki/onetimesharer/internal/pkg/crypter"
 	"github.com/Nunoki/onetimesharer/internal/pkg/filestorage"
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
 	"github.com/Nunoki/onetimesharer/internal/pkg/server"
@@ -25,24 +25,10 @@ var (
 )
 
 func main() {
-	conf, err := processArgs()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
-		os.Exit(1)
-	}
+	conf := configuration()
 
-	encKey := encryptionKey()
-	encrypter := aescfb.New(encKey)
-
-	var store server.Storer
-	if *conf.JSONFile {
-		store, err = filestorage.New(encrypter)
-	} else {
-		store, err = sqlite.New(ctx, encrypter)
-	}
-	if err != nil {
-		log.Fatal(err)
-	}
+	encrypter := aescfb.New(encryptionKey())
+	store := store(encrypter, conf)
 
 	server := server.New(conf, store)
 	// TODO: middleware to prevent large payload attack
@@ -91,9 +77,11 @@ func encryptionKey() (key string) {
 	return
 }
 
-// processArgs processes passed arguments and sets up variables appropriately. If a conflict occurs
-// with flag configuration, an error is being output to stderr, and the program exits.
-func processArgs() (server.Config, error) {
+// configuration processes passed arguments and sets up variables appropriately. If a conflict
+// occurs with flag configuration, an error is being output to stderr, and the program exits.
+func configuration() server.Config {
+	// TODO: it's main that should declare the Config struct so that server implementation
+	// can be swapped
 	conf := server.Config{}
 
 	conf.Certfile = flag.String(
@@ -128,7 +116,7 @@ func processArgs() (server.Config, error) {
 	flag.Parse()
 
 	if *conf.HTTPS && (*conf.Certfile == "" || *conf.Keyfile == "") {
-		return server.Config{}, errors.New("running on HTTPS requires the certification file and key file (see --help)")
+		log.Fatal("running on HTTPS requires the certification file and key file (see --help)")
 	}
 
 	if *conf.Port == 0 {
@@ -139,5 +127,20 @@ func processArgs() (server.Config, error) {
 		}
 	}
 
-	return conf, nil
+	return conf
+}
+
+// DOCME
+func store(encrypter crypter.Crypter, conf server.Config) server.Storer {
+	var store server.Storer
+	var err error
+	if *conf.JSONFile {
+		store, err = filestorage.New(encrypter)
+	} else {
+		store, err = sqlite.New(ctx, encrypter)
+	}
+	if err != nil {
+		log.Fatal(err)
+	}
+	return store
 }
