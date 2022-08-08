@@ -35,7 +35,7 @@ type Storer interface {
 	Close() error
 }
 
-// DOCME
+// New returns a new instance of the server.
 func New(c Config, s Storer) server {
 	server := server{
 		config: c,
@@ -44,12 +44,15 @@ func New(c Config, s Storer) server {
 	return server
 }
 
-// DOCME
+// Shutdown will attempt a graceful shutdown by calling the Close() method on its store. Any error
+// returned by the store's Close() method is being returned.
 func (serv server) Shutdown() error {
 	return serv.store.Close()
 }
 
-// DOCME
+// Serve registers the handlers for all the endpoints, and then initializes the listening on the
+// port configured in its configuration instance. Any returned error will be from http's Listen-
+// methods.
 func (serv server) Serve() error {
 	// TODO: test all endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {

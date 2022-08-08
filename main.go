@@ -24,6 +24,8 @@ var (
 	ctx = context.Background()
 )
 
+// main gets the configuration and all required services, then starts the server, and registers a
+// handler for the kill signals to perform a graceful shutdown
 func main() {
 	conf := configuration()
 
@@ -52,7 +54,9 @@ func main() {
 	log.Print("Server exited properly")
 }
 
-// DOCME
+// encryptionKey returns the encryption key for the encrypter, which is read from an environment
+// variable, or generated anew if none is present. If an encryption key is provided, but not valid
+// (incorrect length), an error is output to stderr and the program exits.
 func encryptionKey() (key string) {
 	key = os.Getenv("OTS_ENCRYPTION_KEY")
 	if len(key) == 0 {
@@ -130,7 +134,9 @@ func configuration() server.Config {
 	return conf
 }
 
-// DOCME
+// store returns an instance of a store for the secrets. It will use the configuration to determine
+// which store will be used. If an error occurs on store initialization, an error is output to
+// stderr and the program exits.
 func store(encrypter crypter.Crypter, conf server.Config) server.Storer {
 	var store server.Storer
 	var err error

@@ -19,7 +19,7 @@ var (
 	filename = "secrets.db"
 )
 
-// DOCME
+// New returns a new instance of the sqliteStore with an initialized database connection.
 func New(ctx context.Context, cr crypter.Crypter) (sqliteStore, error) {
 	db, err := sql.Open("sqlite3", filename)
 	if err != nil {

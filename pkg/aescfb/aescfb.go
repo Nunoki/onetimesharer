@@ -12,7 +12,8 @@ type encrypter struct {
 	Key string
 }
 
-// DOCME
+// New returns a new instance of the AES encrypter in CFB mode, which will use the passed
+// encryption key for subsequent operations.
 func New(key string) encrypter {
 	return encrypter{
 		Key: key,

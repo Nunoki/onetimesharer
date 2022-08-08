@@ -6,25 +6,27 @@ import (
 	"github.com/Nunoki/onetimesharer/internal/pkg/randomizer"
 )
 
-// DOCME
-func (s sqliteStore) ReadSecret(key string) (string, error) {
-	encKey, err := s.Crypter.Encrypt(key)
+// ReadSecret attempts to read the secret corresponding to the passed unencrypted key and returns
+// the unencrypted contents of it.
+func (s sqliteStore) ReadSecret(key string) (secret string, err error) {
+	var encKey string
+	encKey, err = s.Crypter.Encrypt(key)
 	if err != nil {
 		return "", fmt.Errorf("failed to encrypt key when reading: %w", err)
 	}
 
-	var content string
+	var encSecret string
 	err = s.Database.QueryRowContext(
 		s.Context,
 		querySelect,
 		encKey,
-	).Scan(&content)
+	).Scan(&encSecret)
 
 	if err != nil {
 		return "", fmt.Errorf("failed to read secret: %w", err)
 	}
 
-	rawContent, err := s.Crypter.Decrypt(content)
+	secret, err = s.Crypter.Decrypt(encSecret)
 	if err != nil {
 		return "", fmt.Errorf("failed to decrypt secret: %w", err)
 	}
@@ -35,18 +37,22 @@ func (s sqliteStore) ReadSecret(key string) (string, error) {
 		return "", fmt.Errorf("failed to delete secret with key %s: %w", key, err)
 	}
 
-	return rawContent, nil
+	return secret, nil
 }
 
-// DOCME
-func (s sqliteStore) SaveSecret(secret string) (string, error) {
-	key := randomizer.String(32)
-	encKey, err := s.Crypter.Encrypt(key)
+// SaveSecret will generate a new key, save the contents of the passed secret in an encrypted
+// form under the encrypted key, and then return the corresponding unencrypted key.
+func (s sqliteStore) SaveSecret(secret string) (key string, err error) {
+	key = randomizer.String(32)
+
+	var encKey string
+	encKey, err = s.Crypter.Encrypt(key)
 	if err != nil {
 		return "", fmt.Errorf("failed to encrypt key when saving: %w", err)
 	}
 
-	encSecret, err := s.Crypter.Encrypt(secret)
+	var encSecret string
+	encSecret, err = s.Crypter.Encrypt(secret)
 	if err != nil {
 		return "", fmt.Errorf("failed to encrypt secret: %w", err)
 	}
@@ -64,19 +70,20 @@ func (s sqliteStore) SaveSecret(secret string) (string, error) {
 	return key, nil
 }
 
-// DOCME
-func (s sqliteStore) ValidateSecret(key string) (bool, error) {
-	encKey, err := s.Crypter.Encrypt(key)
+// ValidateSecret returns whether the requested key exists in the database.
+func (s sqliteStore) ValidateSecret(key string) (exists bool, err error) {
+	var encKey string
+	encKey, err = s.Crypter.Encrypt(key)
 	if err != nil {
 		return false, fmt.Errorf("failed to encrypt key when validating: %w", err)
 	}
 
-	var content string
+	var encSecret string
 	err = s.Database.QueryRowContext(
 		s.Context,
 		querySelect,
 		encKey,
-	).Scan(&content)
+	).Scan(&encSecret)
 
 	if err != nil {
 		return false, err
@@ -85,7 +92,9 @@ func (s sqliteStore) ValidateSecret(key string) (bool, error) {
 	return err == nil, nil
 }
 
-// DOCME
+// deleteSecret attempts to delete the secret under the passed key from the database. Note that
+// this is the only method where the key is passed in its encrypted form (as it is an unexported
+// shorthand method).
 func (s sqliteStore) deleteSecret(encKey string) error {
 	_, err := s.Database.ExecContext(s.Context, queryDelete, encKey)
 	return err
