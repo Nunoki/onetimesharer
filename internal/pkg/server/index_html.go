@@ -54,16 +54,20 @@ func (serv server) indexHTML() string {
 								})
 									.then(content => content.json())
 									.then(data => {
-										if(data.secret && data.secret.length) {
-											content.innerHTML = data.secret;
-											document.getElementById('create_another').removeAttribute('style');
-										} else {
+										if(!data.secret || !data.secret.length) {
 											content.innerHTML = 'Something went wrong';
 											content.classList.add('error');
+											return
 										}
+
+										content.innerHTML = data.secret.
+											replace(/[\u00A0-\u9999<>\&]/g, function(i) {
+												return '&#'+i.charCodeAt(0)+';';
+											});
+										document.getElementById('create_another').removeAttribute('style');
 									})
 									.catch(error => {
-										content.innerHTML = 'Something went wrong';
+										content.innerHTML = 'An error occurred';
 										content.classList.add('error');
 										console.error(error);
 									});
