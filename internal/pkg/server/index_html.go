@@ -109,7 +109,7 @@ func (serv server) indexHTML() string {
 						name="signature"
 					/>
 					<button type="submit">
-						Keep secret
+						Generate share URL
 					</button>
 				</form>
 	
